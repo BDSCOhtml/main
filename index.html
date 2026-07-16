@@ -1,0 +1,575 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Related Party Reconciliation (AS 18)</title>
+<style>
+  :root{--ink:#1b2a3a;--ink2:#41546a;--muted:#7d8da0;--line:#e4e8ee;--line2:#eef1f5;--paper:#f6f8fa;--card:#fff;
+    --blue:#215d9c;--blue-d:#194776;--ok:#0e7a53;--ok-bg:#e7f5ee;--warn:#9a6a12;--warn-bg:#fbf1dd;--bad:#b0243b;--bad-bg:#fbe9ec;}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  .wrap{max-width:1160px;margin:0 auto;padding:20px 18px 60px}
+  header.h{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  h1{font-size:19px;margin:0 0 2px;letter-spacing:-.01em}
+  .sub{color:var(--ink2);font-size:12.5px;max-width:560px}
+  .who{font-size:12.5px;color:var(--ink2);text-align:right}.who b{color:var(--ink)}
+  .yearbar{display:flex;align-items:center;gap:8px;justify-content:flex-end;margin-top:6px}
+  .yearbar select{width:auto;min-width:130px;padding:5px 8px;font-weight:700;color:var(--blue-d)}
+  .banner{border-radius:8px;padding:8px 12px;font-size:12.5px;margin-top:12px;display:none}
+  .tabs{display:flex;gap:2px;margin:16px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{background:none;border:0;padding:9px 13px;font:inherit;font-weight:600;color:var(--ink2);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
+  .tab:hover{color:var(--ink)}.tab.on{color:var(--blue-d);border-bottom-color:var(--blue)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:13px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)}
+  .card p.hint{margin:0 0 12px;color:var(--ink2);font-size:12.5px}
+  label.fld{display:block;font-size:11.5px;font-weight:600;color:var(--ink2);margin:0 0 4px}
+  input,select{font:inherit;color:var(--ink);background:#fff;border:1px solid #cdd5df;border-radius:7px;padding:8px 9px;width:100%}
+  input:focus,select:focus{outline:2px solid #bcd3ee;border-color:var(--blue);outline-offset:0}
+  input.amt{text-align:right}
+  button.btn{font:inherit;font-weight:600;border-radius:7px;padding:9px 14px;cursor:pointer;border:1px solid transparent}
+  .btn.pri{background:var(--blue);color:#fff}.btn.pri:hover{background:var(--blue-d)}
+  .btn.ghost{background:#fff;color:var(--ink);border-color:#cdd5df}.btn.ghost:hover{border-color:#9fb0c2}
+  .btn.sm{padding:5px 10px;font-size:12.5px}
+  .btn.danger{color:var(--bad);border-color:#e6bcc4;background:#fff}.btn.danger:hover{background:var(--bad-bg)}
+  .row{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line2);vertical-align:top}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;background:#fafbfc}
+  td.r,th.r{text-align:right}tbody tr:hover{background:#fafcff}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.type{background:#eef2f7;color:var(--ink2);font-weight:600}
+  .pill.new{background:#e8effa;color:var(--blue-d)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .stat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  .stat .v{font-size:22px;font-weight:700;margin-top:2px;letter-spacing:-.02em}
+  .muted{color:var(--muted)}.small{font-size:12px}
+  .empty{color:var(--muted);text-align:center;padding:24px 10px;font-size:13px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:10px}
+  .scroll{overflow-x:auto}
+  .lockbar{border-radius:9px;padding:10px 13px;font-size:12.5px;margin-bottom:13px;border:1px solid}
+  .lockbar.open{background:#eef4fb;border-color:#c9dcf1;color:#1b3f66}
+  .lockbar.signed{background:var(--ok-bg);border-color:#bfe3cf;color:var(--ok)}
+  .lockbar.locked{background:var(--bad-bg);border-color:#e6bcc4;color:var(--bad)}
+  .btn.warnbtn{background:#fff;color:var(--warn);border-color:#e0c48a}
+  .btn.warnbtn:hover{background:var(--warn-bg)}
+  input:disabled,select:disabled{background:#f4f6f8;color:var(--ink2);cursor:not-allowed;border-color:#dfe4ea}
+  .center{max-width:400px;margin:8vh auto 0}
+  .stamp{font-size:11px;color:var(--muted)}
+  .sechead td{font-weight:700;background:#f0f4f8;color:var(--ink2)}
+  .subhead td{font-weight:600;background:#f7f9fb;color:var(--ink2);font-size:12px}
+  .up{color:var(--ok)}.down{color:var(--bad)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{background:#eef2f7;border-radius:16px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:6px}
+  .chip b{color:var(--ink)}
+  .chip button{border:0;background:none;color:var(--bad);cursor:pointer;font-weight:700;padding:0 0 0 2px}
+  @media(max-width:640px){.grid3{grid-template-columns:1fr}.wrap{padding:14px 10px 50px}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyD7nIUc8MGdjYyRF6gTnw39K5XTMFoiV84",
+    authDomain: "bdsco-d149f.firebaseapp.com",
+    projectId: "bdsco-d149f",
+    storageBucket: "bdsco-d149f.firebasestorage.app",
+    messagingSenderId: "488473714767",
+    appId: "1:488473714767:web:8227b23367787f77040a3a"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  window._fbDb = getFirestore(fbApp);
+  window._fbDoc = doc;
+  window._fbGetDoc = getDoc;
+  window._fbSetDoc = setDoc;
+
+  // Firestore rules require request.auth != null, so sign in anonymously
+  // before marking the app "ready" to talk to the database.
+  const auth = getAuth(fbApp);
+  onAuthStateChanged(auth, function(user){
+    if (user) { window._fbReady = true; }
+  });
+  signInAnonymously(auth).catch(function(e){ console.error("Anonymous sign-in failed:", e); });
+</script>
+
+<script>
+(function(){
+"use strict";
+var HAS=true;
+var COL="as18_data";
+function waitFb(){return new Promise(function(res){
+  if(window._fbReady)return res();
+  var iv=setInterval(function(){if(window._fbReady){clearInterval(iv);res();}},30);
+});}
+var store={
+  async get(k){
+    try{
+      await waitFb();
+      var snap=await window._fbGetDoc(window._fbDoc(window._fbDb,COL,k));
+      return snap.exists()?snap.data().value:null;
+    }catch(e){console.error("Firestore get failed for",k,e);return null;}
+  },
+  async set(k,v){
+    try{
+      await waitFb();
+      await window._fbSetDoc(window._fbDoc(window._fbDb,COL,k),{value:v});
+    }catch(e){console.error("Firestore set failed for",k,e);}
+  }
+};
+async function gj(k,d){var s=await store.get(k);if(s==null)return d;try{return JSON.parse(s);}catch(e){return d;}}
+async function sj(k,v){return store.set(k,JSON.stringify(v));}
+
+var TYPES=["Sale of goods","Purchase of goods","Rendering of services","Receiving of services",
+  "Sale of fixed assets","Purchase of fixed assets","Loans given","Loans taken",
+  "Loan repayment received","Loan repayment made","Advance given","Advance received",
+  "Interest income","Interest expense","Rent income","Rent expense","Dividend received","Dividend paid",
+  "Guarantee given","Guarantee received","Reimbursement paid","Reimbursement received",
+  "KMP remuneration","Amounts written off","Amounts written back","Other"];
+var RECIP={"Sale of goods":"Purchase of goods","Purchase of goods":"Sale of goods",
+  "Rendering of services":"Receiving of services","Receiving of services":"Rendering of services",
+  "Sale of fixed assets":"Purchase of fixed assets","Purchase of fixed assets":"Sale of fixed assets",
+  "Loans given":"Loans taken","Loans taken":"Loans given",
+  "Loan repayment received":"Loan repayment made","Loan repayment made":"Loan repayment received",
+  "Advance given":"Advance received","Advance received":"Advance given",
+  "Interest income":"Interest expense","Interest expense":"Interest income",
+  "Rent income":"Rent expense","Rent expense":"Rent income",
+  "Dividend received":"Dividend paid","Dividend paid":"Dividend received",
+  "Guarantee given":"Guarantee received","Guarantee received":"Guarantee given",
+  "Reimbursement paid":"Reimbursement received","Reimbursement received":"Reimbursement paid",
+  "Amounts written off":"Amounts written back","Amounts written back":"Amounts written off"};
+var BALCATS=["Trade receivable / payable","Loan outstanding","Advance","Interest accrued","Investment",
+  "Guarantee outstanding","KMP remuneration payable","Reimbursement","Other receivable / payable"];
+var RELS=["Holding company","Subsidiary","Fellow subsidiary","Associate / JV",
+  "Key management personnel (KMP)","Relative of KMP","Enterprise controlled by KMP / relatives","Other related party"];
+
+var users=[],entities=[],config={tolerance:1,years:[],activeFy:""},me=null,tab="tx",curFy="";
+var bals={},txs={},signs={},lockInfo=null;
+var fmt=new Intl.NumberFormat("en-IN",{maximumFractionDigits:2});
+function money(n){return (n==null||isNaN(n))?"—":"₹"+fmt.format(n);}
+function uid(p){return p+Math.random().toString(36).slice(2,7)+Date.now().toString(36).slice(-3);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function nameOf(id){var e=entities.find(function(x){return x.id===id;});return e?e.name:"(removed)";}
+function sgn(t,a){return t==="pay"?-Math.abs(a):Math.abs(a);}
+function when(ts){if(!ts)return"";var d=new Date(ts);return d.toLocaleDateString("en-IN",{day:"2-digit",month:"short"})+" "+d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});}
+function kTx(e,fy){return "ic:tx:"+e+":"+fy;}
+function kBal(e,fy){return "ic:bal2:"+e+":"+fy;}
+function kSign(e,fy){return "ic:sign:"+e+":"+fy;}
+function kLock(fy){return "ic:lock:"+fy;}
+var app=document.getElementById("app");
+
+async function loadMeta(){
+  users=await gj("ic:users",[]);entities=await gj("ic:entities",[]);
+  config=Object.assign({tolerance:1,years:[],activeFy:""},await gj("ic:config",{}));
+  if(!config.years||!config.years.length){
+    var seed=config.fy||"2025-26";config.years=[seed];config.activeFy=seed;
+    // migrate any pre-year data into the seed year
+    for(var i=0;i<entities.length;i++){
+      var oldT=await gj("ic:tx:"+entities[i].id,null),oldB=await gj("ic:bal2:"+entities[i].id,null);
+      if(oldT&&oldT.length)await sj(kTx(entities[i].id,seed),oldT);
+      if(oldB&&oldB.length)await sj(kBal(entities[i].id,seed),oldB);
+    }
+    await sj("ic:config",config);
+  }
+  if(!curFy||config.years.indexOf(curFy)<0)curFy=config.activeFy||config.years[0];
+}
+async function loadYear(fy){
+  var T={},B={},S={};
+  for(var i=0;i<entities.length;i++){T[entities[i].id]=await gj(kTx(entities[i].id,fy),[]);B[entities[i].id]=await gj(kBal(entities[i].id,fy),[]);S[entities[i].id]=await gj(kSign(entities[i].id,fy),null);}
+  var L=await gj(kLock(fy),null);
+  return {T:T,B:B,S:S,L:L};
+}
+async function loadAll(){await loadMeta();var d=await loadYear(curFy);txs=d.T;bals=d.B;signs=d.S||{};lockInfo=d.L||null;}
+function myEntity(){return me?me.entityId:null;}
+function isAdmin(){return me&&me.role==="admin";}
+function isLockedFy(){return !!(lockInfo&&lockInfo.locked);}
+function signOf(eid){return signs[eid]||null;}
+function isSigned(eid){var s=signOf(eid);return !!(s&&s.signed);}
+function canEdit(eid){return !isLockedFy()&&!isSigned(eid);}
+async function boot(){await loadAll();if(!users.length)return renderFirstRun();if(!me)return renderLogin();renderShell();}
+
+function renderFirstRun(){
+  app.innerHTML='<div class="center card"><h2>First-time setup</h2><p class="hint">Create the administrator account. The admin adds the financial years, the group entities, and a login for each accountant locked to one entity.</p>'+
+    '<label class="fld">Your name</label><input id="an">'+
+    '<label class="fld" style="margin-top:8px">Choose a PIN</label><input id="ap" type="password" placeholder="4+ characters">'+
+    '<button class="btn pri" id="go" style="margin-top:12px;width:100%">Create admin &amp; continue</button>'+
+    '<p class="stamp" style="margin-top:10px">The PIN is a lightweight access gate. For statutory recurring use, deploy the hosted version with server-enforced logins.</p></div>';
+  document.getElementById("go").onclick=async function(){
+    var n=document.getElementById("an").value.trim(),p=document.getElementById("ap").value.trim();
+    if(!n||p.length<4){alert("Enter a name and a PIN of at least 4 characters.");return;}
+    users=[{id:uid("u"),name:n,pin:p,entityId:null,role:"admin"}];await sj("ic:users",users);me=users[0];tab="admin";renderShell();};
+}
+function renderLogin(){
+  app.innerHTML='<div class="center card"><h2>Sign in</h2><p class="hint">Each accountant signs in with their own ID and can only enter their assigned entity\'s figures.</p>'+
+    '<label class="fld">User</label><select id="lu">'+users.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+(u.role==="admin"?" (admin)":u.entityId?" · "+esc(nameOf(u.entityId)):"")+'</option>';}).join("")+'</select>'+
+    '<label class="fld" style="margin-top:8px">PIN</label><input id="lp" type="password">'+
+    '<button class="btn pri" id="li" style="margin-top:12px;width:100%">Sign in</button><div id="lerr" class="small" style="color:var(--bad);margin-top:8px"></div></div>';
+  document.getElementById("li").onclick=function(){
+    var sel=document.getElementById("lu").value,u=users.find(function(x){return x.id===sel;});
+    if(!u||u.pin!==document.getElementById("lp").value.trim()){document.getElementById("lerr").textContent="Wrong PIN. Try again.";return;}
+    me=u;tab=isAdmin()?"admin":"tx";renderShell();};
+}
+function renderShell(){
+  var t=[["tx","My entries"],["recon","Reconciliation"],["as18","AS 18 summary"],["cmp","Compare years"]];
+  if(isAdmin())t.push(["admin","Admin"]);
+  var lock=myEntity()?'Entering for <b>'+esc(nameOf(myEntity()))+'</b>':(isAdmin()?'Administrator':'No entity assigned');
+  app.innerHTML='<header class="h"><div><h1>Related Party Reconciliation <span class="muted" style="font-size:13px;font-weight:600">· AS 18</span></h1>'+
+    '<div class="sub">Each accountant enters only their own entity\'s figures. Balances are held by category, reconciled category-by-category, and kept year by year.</div></div>'+
+    '<div><div class="who">'+lock+'<br><b>'+esc(me.name)+'</b> · <a href="#" id="out" style="color:var(--blue)">sign out</a></div>'+
+    '<div class="yearbar"><label class="fld" style="margin:0">Financial year</label><select id="fySel">'+
+      config.years.map(function(y){return '<option value="'+esc(y)+'"'+(y===curFy?" selected":"")+'>'+esc(y)+'</option>';}).join("")+'</select></div></div></header>'+
+    '<div class="banner" id="banner"></div><nav class="tabs" id="tabs">'+t.map(function(x){return '<button class="tab'+(x[0]===tab?" on":"")+'" data-t="'+x[0]+'">'+x[1]+'</button>';}).join("")+'</nav><section id="view"></section>';
+  document.getElementById("out").onclick=function(e){e.preventDefault();me=null;boot();};
+  document.getElementById("tabs").onclick=function(e){var b=e.target.closest(".tab");if(!b)return;tab=b.dataset.t;renderView();};
+  document.getElementById("fySel").onchange=async function(){curFy=this.value;var d=await loadYear(curFy);txs=d.T;bals=d.B;flash("Now working in FY "+curFy);renderView();};
+  if(!HAS){var bn=document.getElementById("banner");bn.style.display="block";bn.style.background="var(--warn-bg)";bn.style.color="var(--warn)";bn.style.border="1px solid #e7d7ac";
+    bn.textContent="Shared storage isn't active here — data saves only in this browser. The hosted version syncs every accountant to one database.";}
+  renderView();
+}
+function renderView(){
+  document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("on",x.dataset.t===tab);});
+  if(tab==="admin"&&isAdmin())renderAdmin();
+  else if(tab==="recon")renderRecon();
+  else if(tab==="as18")renderAS18();
+  else if(tab==="cmp")renderCompare();
+  else renderTx();
+}
+function flash(m,bad){var b=document.getElementById("banner");if(!b)return;b.textContent=m;b.style.display="block";
+  b.style.background=bad?"var(--bad-bg)":"var(--ok-bg)";b.style.color=bad?"var(--bad)":"var(--ok)";b.style.border="1px solid "+(bad?"#e6bcc4":"#bfe3cf");
+  clearTimeout(flash._t);flash._t=setTimeout(function(){b.style.display="none";},2600);}
+
+function renderAdmin(){
+  var v=document.getElementById("view"),h="";
+  h+='<div class="card"><h2>Financial years</h2><p class="hint">Add each year once. Data is stored separately per year, so the same file carries the group forward indefinitely.</p>'+
+    '<div class="row"><div style="flex:1;max-width:200px"><label class="fld">Add a year</label><input id="ny" placeholder="2026-27"></div>'+
+    '<button class="btn pri" id="addy">Add year</button></div><div class="chips">'+
+    config.years.map(function(y){return '<span class="chip"><b>'+esc(y)+'</b>'+(config.years.length>1?'<button data-dy="'+esc(y)+'" title="Remove year">✕</button>':'')+'</span>';}).join("")+'</div></div>';
+  h+='<div class="card"><h2>Group entities</h2><p class="hint">Entities and users are shared across all years — set them up once.</p>'+
+    '<div class="row"><div style="flex:2;min-width:170px"><label class="fld">Name</label><input id="en"></div>'+
+    '<div style="flex:1;min-width:110px"><label class="fld">Type</label><select id="ety"><option value="company">Company</option><option value="director">Director file</option></select></div>'+
+    '<div style="flex:2;min-width:170px"><label class="fld">AS 18 relationship</label><select id="erel">'+RELS.map(function(r){return '<option>'+r+'</option>';}).join("")+'</select></div>'+
+    '<button class="btn pri" id="adde">Add</button></div>';
+  if(entities.length){h+='<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Entity</th><th>Type</th><th>Relationship</th><th></th></tr></thead><tbody>'+
+    entities.map(function(e){return '<tr><td><b>'+esc(e.name)+'</b></td><td>'+(e.type==="director"?"Director file":"Company")+'</td><td>'+esc(e.rel)+'</td><td class="r"><button class="btn danger sm" data-de="'+e.id+'">Remove</button></td></tr>';}).join("")+'</tbody></table></div>';}
+  h+='</div>';
+  h+='<div class="card"><h2>Users &amp; access</h2><p class="hint">One accountant, one entity — that lock prevents the same person keying both sides of a balance.</p>'+
+    '<div class="row"><div style="flex:2;min-width:150px"><label class="fld">Name</label><input id="un"></div>'+
+    '<div style="flex:1;min-width:100px"><label class="fld">PIN</label><input id="up" placeholder="4+ chars"></div>'+
+    '<div style="flex:2;min-width:160px"><label class="fld">Locked to entity</label><select id="ue"><option value="">— none (admin) —</option>'+entities.map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+'</option>';}).join("")+'</select></div>'+
+    '<div style="flex:1;min-width:110px"><label class="fld">Role</label><select id="ur"><option value="accountant">Accountant</option><option value="admin">Admin</option></select></div>'+
+    '<button class="btn pri" id="addu">Add</button></div>'+
+    '<div class="scroll" style="margin-top:12px"><table><thead><tr><th>User</th><th>Role</th><th>Entity</th><th>PIN</th><th></th></tr></thead><tbody>'+
+    users.map(function(u){return '<tr><td><b>'+esc(u.name)+'</b></td><td>'+u.role+'</td><td>'+(u.entityId?esc(nameOf(u.entityId)):'<span class="muted">—</span>')+'</td><td class="num muted">'+"•".repeat(u.pin.length)+'</td><td class="r">'+(u.id===me.id?'<span class="muted small">you</span>':'<button class="btn danger sm" data-du="'+u.id+'">Remove</button>')+'</td></tr>';}).join("")+
+    '</tbody></table></div></div>';
+  h+='<div class="card"><h2>Sign-off &amp; period lock — FY '+esc(curFy)+'</h2>'+
+    '<p class="hint">Each accountant signs off their own entity when final. Once you lock the year, nothing can be edited by anyone — including reopening a sign-off.</p>'+
+    '<div class="row" style="margin-bottom:10px">'+
+      (isLockedFy()
+        ? '<span class="pill bad" style="padding:6px 12px">FY '+esc(curFy)+' is LOCKED'+(lockInfo.at?" · "+when(lockInfo.at):"")+(lockInfo.by?" by "+esc(lockInfo.by):"")+'</span><button class="btn ghost sm" id="unlockfy">Unlock year</button>'
+        : '<span class="pill ok" style="padding:6px 12px">FY '+esc(curFy)+' is open</span><button class="btn warnbtn sm" id="lockfy">Lock FY '+esc(curFy)+'</button>')+
+    '</div>'+
+    '<div class="scroll"><table><thead><tr><th>Entity</th><th>Status</th><th>Signed off by</th><th>When</th><th></th></tr></thead><tbody>'+
+    entities.map(function(e){var s=signOf(e.id);
+      return '<tr><td><b>'+esc(e.name)+'</b></td>'+
+        '<td>'+(s&&s.signed?'<span class="pill ok">Signed off</span>':'<span class="pill warn">Pending</span>')+'</td>'+
+        '<td>'+(s&&s.by?esc(s.by):'<span class="muted">—</span>')+'</td>'+
+        '<td>'+(s&&s.at?when(s.at):'<span class="muted">—</span>')+'</td>'+
+        '<td class="r">'+((s&&s.signed&&!isLockedFy())?'<button class="btn ghost sm" data-ro="'+e.id+'">Reopen</button>':'')+'</td></tr>';}).join("")+
+    '</tbody></table></div></div>';
+  h+='<div class="card"><h2>Settings</h2><div class="grid3">'+
+    '<div><label class="fld">Default year for new sign-ins</label><select id="afy">'+config.years.map(function(y){return '<option value="'+esc(y)+'"'+(y===config.activeFy?" selected":"")+'>'+esc(y)+'</option>';}).join("")+'</select></div>'+
+    '<div><label class="fld">Rounding tolerance (₹)</label><input class="amt num" id="tol" type="number" value="'+(config.tolerance||0)+'"></div>'+
+    '<div style="align-self:end"><button class="btn ghost" id="savecfg">Save settings</button></div></div></div>';
+  v.innerHTML=h;
+  document.getElementById("addy").onclick=async function(){var y=document.getElementById("ny").value.trim();if(!y)return;
+    if(config.years.indexOf(y)>=0){alert("That year already exists.");return;}
+    config.years.push(y);config.years.sort();await sj("ic:config",config);await loadAll();renderShell();flash("Year "+y+" added");};
+  document.querySelectorAll("[data-dy]").forEach(function(b){b.onclick=async function(){var y=b.dataset.dy;
+    if(!confirm("Remove FY "+y+" and all figures stored against it?"))return;
+    for(var i=0;i<entities.length;i++){await sj(kTx(entities[i].id,y),[]);await sj(kBal(entities[i].id,y),[]);}
+    config.years=config.years.filter(function(x){return x!==y;});
+    if(config.activeFy===y)config.activeFy=config.years[0]||"";
+    if(curFy===y)curFy=config.years[0]||"";
+    await sj("ic:config",config);await loadAll();renderShell();};});
+  document.getElementById("adde").onclick=async function(){var n=document.getElementById("en").value.trim();if(!n)return;
+    entities.push({id:uid("e"),name:n,type:document.getElementById("ety").value,rel:document.getElementById("erel").value});
+    await sj("ic:entities",entities);await loadAll();renderAdmin();};
+  document.querySelectorAll("[data-de]").forEach(function(b){b.onclick=async function(){if(!confirm("Remove entity and all its data, in every year?"))return;var id=b.dataset.de;
+    for(var i=0;i<config.years.length;i++){await sj(kTx(id,config.years[i]),[]);await sj(kBal(id,config.years[i]),[]);}
+    entities=entities.filter(function(e){return e.id!==id;});await sj("ic:entities",entities);await loadAll();renderAdmin();};});
+  document.getElementById("addu").onclick=async function(){var n=document.getElementById("un").value.trim(),p=document.getElementById("up").value.trim();
+    if(!n||p.length<4){alert("Name and 4+ char PIN required.");return;}
+    users.push({id:uid("u"),name:n,pin:p,entityId:document.getElementById("ue").value||null,role:document.getElementById("ur").value});
+    await sj("ic:users",users);renderAdmin();};
+  document.querySelectorAll("[data-du]").forEach(function(b){b.onclick=async function(){var id=b.dataset.du;users=users.filter(function(u){return u.id!==id;});await sj("ic:users",users);renderAdmin();};});
+  var lf=document.getElementById("lockfy");
+  if(lf)lf.onclick=async function(){
+    var pend=entities.filter(function(e){var s=signOf(e.id);return !(s&&s.signed);});
+    var msg="Lock FY "+curFy+"?\n\nAfter locking, no entity can be edited or reopened.";
+    if(pend.length)msg+="\n\nWarning: "+pend.length+" entity(ies) have NOT signed off yet:\n· "+pend.map(function(e){return e.name;}).join("\n· ");
+    if(!confirm(msg))return;
+    lockInfo={locked:true,by:me.name,at:Date.now()};await sj(kLock(curFy),lockInfo);flash("FY "+curFy+" locked.");renderAdmin();};
+  var uf=document.getElementById("unlockfy");
+  if(uf)uf.onclick=async function(){
+    if(!confirm("Unlock FY "+curFy+"? Entities that are not signed off will become editable again."))return;
+    lockInfo=null;await sj(kLock(curFy),null);flash("FY "+curFy+" unlocked.");renderAdmin();};
+  document.querySelectorAll("[data-ro]").forEach(function(b){b.onclick=async function(){
+    var id=b.dataset.ro;
+    if(!confirm("Withdraw sign-off for "+nameOf(id)+" (FY "+curFy+")?"))return;
+    signs[id]=null;await sj(kSign(id,curFy),null);flash("Sign-off withdrawn for "+nameOf(id));renderAdmin();};});
+  document.getElementById("savecfg").onclick=async function(){config.activeFy=document.getElementById("afy").value;config.tolerance=parseFloat(document.getElementById("tol").value)||0;await sj("ic:config",config);flash("Settings saved");};
+}
+
+function renderTx(){
+  var v=document.getElementById("view"),eid=myEntity();
+  if(!eid){v.innerHTML='<div class="card"><div class="empty">No entity is assigned to your login. Ask the administrator to lock your account to one entity.</div></div>';return;}
+  var others=entities.filter(function(e){return e.id!==eid;}),mine=txs[eid]||[],mybal=bals[eid]||[];
+  var ed=canEdit(eid),sg=signOf(eid);
+  var statusBar="";
+  if(isLockedFy()) statusBar='<div class="lockbar locked"><b>FY '+esc(curFy)+' is locked</b> by the administrator'+(lockInfo.at?" on "+when(lockInfo.at):"")+'. No further changes can be made.</div>';
+  else if(isSigned(eid)) statusBar='<div class="lockbar signed"><b>Signed off as final</b> by '+esc(sg.by||"")+(sg.at?" on "+when(sg.at):"")+'. Figures are read-only. <button class="btn ghost sm" id="reopen" style="margin-left:8px">Reopen for editing</button></div>';
+  else statusBar='<div class="lockbar open"><b>Open for editing</b> — click into any existing row to change it, add or remove rows, then Save. Sign off when your figures are final.</div>';
+  var h=statusBar+'<div class="card"><h2>Related-party transactions — '+esc(nameOf(eid))+' <span class="pill new">FY '+esc(curFy)+'</span></h2>'+
+    '<p class="hint">Every related-party transaction during this financial year, by nature (AS 18). Switch year using the selector at the top right.</p>'+
+    '<div class="scroll"><table><thead><tr><th style="min-width:145px">Counterparty</th><th style="min-width:160px">Nature</th><th style="min-width:115px">Date</th><th class="r" style="min-width:115px">Amount (₹)</th><th style="min-width:140px">Narration</th><th style="min-width:90px">Ref</th><th></th></tr></thead><tbody id="txbody"></tbody></table></div>'+
+    (ed?'<button class="btn ghost sm" id="addtx" style="margin-top:10px">+ Add transaction</button>':'')+'</div>';
+  h+='<div class="card"><h2>Closing balances by category — as at end of FY '+esc(curFy)+'</h2>'+
+    '<p class="hint">A separate line per category. Loans, advances and trade balances stay apart and are reconciled category-by-category — never netted against each other.</p>'+
+    '<div class="scroll"><table><thead><tr><th style="min-width:145px">Counterparty</th><th style="min-width:175px">Category</th><th style="min-width:175px">Position</th><th class="r" style="min-width:120px">Amount (₹)</th><th style="min-width:140px">Note</th><th></th></tr></thead><tbody id="balbody"></tbody></table></div>'+
+    (ed?'<button class="btn ghost sm" id="addbal" style="margin-top:10px">+ Add balance line</button>':'')+
+    (ed?'<div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn pri" id="saveall">Save FY '+esc(curFy)+'</button>'+
+        '<button class="btn warnbtn" id="signoff">Sign off as final</button>'+
+        '<span class="stamp" id="stamp"></span></div>'
+       :'<div style="margin-top:14px"><span class="stamp" id="stamp"></span></div>')+'</div>';
+  v.innerHTML=h;
+  function optCp(s){return '<option value="">— select —</option>'+others.map(function(e){return '<option value="'+e.id+'"'+(e.id===s?" selected":"")+'>'+esc(e.name)+'</option>';}).join("");}
+  var txbody=document.getElementById("txbody"),balbody=document.getElementById("balbody");
+  var dis=ed?"":" disabled";
+  function addTx(t){t=t||{};var tr=document.createElement("tr");
+    tr.innerHTML='<td><select class="tx" data-f="cp"'+dis+'>'+optCp(t.cp)+'</select></td>'+
+      '<td><select class="tx" data-f="type"'+dis+'>'+TYPES.map(function(x){return '<option'+(x===t.type?" selected":"")+'>'+x+'</option>';}).join("")+'</select></td>'+
+      '<td><input class="tx" data-f="date" type="date" value="'+(t.date||"")+'"'+dis+'></td>'+
+      '<td class="r"><input class="tx amt num" data-f="amt" type="number" step="0.01" value="'+(t.amt!=null?t.amt:"")+'"'+dis+'></td>'+
+      '<td><input class="tx" data-f="narr" value="'+esc(t.narr||"")+'"'+dis+'></td>'+
+      '<td><input class="tx" data-f="ref" value="'+esc(t.ref||"")+'"'+dis+'></td>'+
+      '<td class="r">'+(ed?'<button class="btn danger sm" title="Remove this row">&#10005;</button>':'')+'</td>';
+    if(ed)tr.querySelector("button").onclick=function(){tr.remove();};
+    txbody.appendChild(tr);}
+  function addBal(b){b=b||{};var tr=document.createElement("tr");
+    tr.innerHTML='<td><select class="bl" data-f="cp"'+dis+'>'+optCp(b.cp)+'</select></td>'+
+      '<td><select class="bl" data-f="cat"'+dis+'>'+BALCATS.map(function(x){return '<option'+(x===b.cat?" selected":"")+'>'+x+'</option>';}).join("")+'</select></td>'+
+      '<td><select class="bl" data-f="type"'+dis+'><option value="recv"'+(b.type==="recv"?" selected":"")+'>Receivable (owed to us)</option><option value="pay"'+(b.type==="pay"?" selected":"")+'>Payable (we owe)</option></select></td>'+
+      '<td class="r"><input class="bl amt num" data-f="amt" type="number" step="0.01" value="'+(b.amt!=null?b.amt:"")+'"'+dis+'></td>'+
+      '<td><input class="bl" data-f="note" value="'+esc(b.note||"")+'"'+dis+'></td>'+
+      '<td class="r">'+(ed?'<button class="btn danger sm" title="Remove this row">&#10005;</button>':'')+'</td>';
+    if(ed)tr.querySelector("button").onclick=function(){tr.remove();};
+    balbody.appendChild(tr);}
+  if(mine.length)mine.forEach(addTx);else if(ed)addTx();
+  if(mybal.length)mybal.forEach(addBal);else if(ed)addBal();
+  if(!mine.length&&!ed)txbody.innerHTML='<tr><td colspan="7" class="muted" style="text-align:center;padding:16px">No transactions recorded.</td></tr>';
+  if(!mybal.length&&!ed)balbody.innerHTML='<tr><td colspan="6" class="muted" style="text-align:center;padding:16px">No balances recorded.</td></tr>';
+  var at=document.getElementById("addtx");if(at)at.onclick=function(){addTx();};
+  var ab=document.getElementById("addbal");if(ab)ab.onclick=function(){addBal();};
+  var m0=(mine[0]&&mine[0]._m)||(mybal[0]&&mybal[0]._m);
+  var st=document.getElementById("stamp");if(st)st.textContent=m0?("Last saved "+when(m0.at)+" by "+m0.by):"";
+  var ro=document.getElementById("reopen");
+  if(ro)ro.onclick=async function(){
+    if(!confirm("Reopen FY "+curFy+" for "+nameOf(eid)+"? The sign-off will be withdrawn and the figures become editable again."))return;
+    signs[eid]=null;await sj(kSign(eid,curFy),null);flash("Reopened for editing — remember to sign off again when final.");renderTx();};
+  var so=document.getElementById("signoff");
+  if(so)so.onclick=async function(){
+    if(!confirm("Sign off "+nameOf(eid)+" for FY "+curFy+" as final?\n\nSave your latest changes first. After sign-off the figures become read-only (you can reopen until the administrator locks the year)."))return;
+    var rec={signed:true,by:me.name,at:Date.now()};
+    signs[eid]=rec;await sj(kSign(eid,curFy),rec);flash("Signed off — "+nameOf(eid)+" FY "+curFy+" is now read-only.");renderTx();};
+  var sbtn=document.getElementById("saveall");
+  if(sbtn)sbtn.onclick=async function(){
+    if(!canEdit(eid)){flash("These figures are signed off or the year is locked — no changes saved.",true);return;}
+    var now=Date.now(),T=[],B=[];
+    document.querySelectorAll("#txbody tr").forEach(function(tr){var o={};tr.querySelectorAll(".tx").forEach(function(el){o[el.dataset.f]=el.value;});
+      var a=parseFloat(o.amt);if(o.cp&&o.type&&!isNaN(a)&&a!==0){o.amt=Math.abs(a);o._m={at:now,by:me.name};T.push(o);}});
+    document.querySelectorAll("#balbody tr").forEach(function(tr){var o={};tr.querySelectorAll(".bl").forEach(function(el){o[el.dataset.f]=el.value;});
+      var a=parseFloat(o.amt);if(o.cp&&o.cat&&o.type&&!isNaN(a)&&a!==0){o.amt=Math.abs(a);o._m={at:now,by:me.name};B.push(o);}});
+    txs[eid]=T;bals[eid]=B;await sj(kTx(eid,curFy),T);await sj(kBal(eid,curFy),B);
+    flash("Saved "+T.length+" transaction(s) and "+B.length+" balance line(s) for "+nameOf(eid)+" · FY "+curFy);renderTx();};
+}
+
+function balAggIn(src,eid,cpId){var m={};(src[eid]||[]).forEach(function(b){if(b.cp===cpId){m[b.cat]=(m[b.cat]||0)+sgn(b.type,+b.amt||0);}});return m;}
+function txAggIn(src,eid,cpId){var m={};(src[eid]||[]).forEach(function(t){if(t.cp===cpId){m[t.type]=(m[t.type]||0)+(+t.amt||0);}});return m;}
+function balAgg(e,c){return balAggIn(bals,e,c);}
+function txAgg(e,c){return txAggIn(txs,e,c);}
+function side(n){if(n==null)return '<span class="muted">— not entered —</span>';return n<0?'<span style="color:var(--bad)">('+money(Math.abs(n))+')</span>':'<span style="color:var(--ok)">'+money(n)+'</span>';}
+
+function renderRecon(){
+  var v=document.getElementById("view"),tol=config.tolerance||0;
+  var scope=isAdmin()?null:myEntity();
+  if(!isAdmin()&&!scope){v.innerHTML='<div class="card"><div class="empty">No entity is assigned to your login, so there is nothing for you to reconcile.</div></div>';return;}
+  var rows=[],ok=0,bad=0,one=0,tot=0;
+  for(var i=0;i<entities.length;i++)for(var j=i+1;j<entities.length;j++){
+    (function(A,B){
+      if(scope&&A.id!==scope&&B.id!==scope)return;
+      var ga=balAgg(A.id,B.id),gb=balAgg(B.id,A.id),cats={};
+      Object.keys(ga).forEach(function(c){cats[c]=1;});Object.keys(gb).forEach(function(c){cats[c]=1;});
+      Object.keys(cats).forEach(function(cat){
+        var a=ga[cat],b=gb[cat],ha=(a!=null&&a!==0),hb=(b!=null&&b!==0);
+        if(!ha&&!hb)return;
+        var st,d=null;
+        if(ha&&hb){d=a+b;if(Math.abs(d)<=tol){st="ok";ok++;}else{st="bad";bad++;tot+=Math.abs(d);}}
+        else{st="warn";one++;tot+=Math.abs(ha?a:b);}
+        rows.push({A:A,B:B,cat:cat,a:ha?a:null,b:hb?b:null,st:st,d:d});
+      });
+    })(entities[i],entities[j]);
+  }
+  rows.sort(function(x,y){var o={bad:0,warn:1,ok:2};return (o[x.st]-o[y.st])||x.cat.localeCompare(y.cat);});
+  var txRows=[],txBad=0;
+  for(var p=0;p<entities.length;p++)for(var q=p+1;q<entities.length;q++){
+    (function(A,B){
+      if(scope&&A.id!==scope&&B.id!==scope)return;
+      var aa=txAgg(A.id,B.id),bb=txAgg(B.id,A.id),seen={};
+      Object.keys(aa).forEach(function(ty){var r=RECIP[ty],av=aa[ty],bv=r?(bb[r]||0):0;seen[ty]=1;if(r)seen[r]=1;
+        if(Math.abs(av-bv)>tol){txRows.push({A:A,B:B,ta:ty,va:av,tb:r||"(no reciprocal)",vb:bv,d:Math.abs(av-bv)});txBad++;}});
+      Object.keys(bb).forEach(function(ty){if(seen[ty])return;var r=RECIP[ty],bv=bb[ty],av=r?(aa[r]||0):0;
+        if(Math.abs(bv-av)>tol){txRows.push({A:B,B:A,ta:ty,va:bv,tb:r||"(no reciprocal)",vb:av,d:Math.abs(bv-av)});txBad++;}});
+    })(entities[p],entities[q]);
+  }
+  var h='<div class="stats">'+
+    '<div class="stat"><div class="k">FY</div><div class="v" style="font-size:18px">'+esc(curFy)+'</div></div>'+
+    '<div class="stat"><div class="k">Matched</div><div class="v num" style="color:var(--ok)">'+ok+'</div></div>'+
+    '<div class="stat"><div class="k">Mismatches</div><div class="v num" style="color:'+(bad?"var(--bad)":"var(--ink)")+'">'+bad+'</div></div>'+
+    '<div class="stat"><div class="k">One-sided</div><div class="v num" style="color:'+(one?"var(--warn)":"var(--ink)")+'">'+one+'</div></div>'+
+    '<div class="stat"><div class="k">Txn mismatches</div><div class="v num" style="color:'+(txBad?"var(--bad)":"var(--ink)")+'">'+txBad+'</div></div>'+
+    '<div class="stat"><div class="k">Unreconciled</div><div class="v num" style="color:'+((bad||one)?"var(--bad)":"var(--ok)")+'">'+money(tot)+'</div></div></div>';
+  h+='<div class="card"><div class="toolbar"><h2 style="margin:0">Closing balances — reconciled by category · FY '+esc(curFy)+'</h2><button class="btn ghost sm" id="csvB">Export CSV</button></div>'+
+     '<p class="hint">Each category is checked on its own. A loan receivable in one entity must equal a loan payable in the other — it cannot be squared off against a trade balance.'+
+     (scope?' <b>You are shown only balances where '+esc(nameOf(scope))+' is one of the two parties.</b>':' <b>Administrator view: all pairs across the group.</b>')+'</p>';
+  if(!rows.length)h+='<div class="empty">No closing balances entered for FY '+esc(curFy)+' yet.</div>';
+  else{h+='<div class="scroll"><table><thead><tr><th>Entity A</th><th>Entity B</th><th>Category</th><th class="r">A\'s books</th><th class="r">B\'s books</th><th class="r">Difference</th><th>Status</th></tr></thead><tbody>'+
+    rows.map(function(x){var pil=x.st==="ok"?'<span class="pill ok">Matched</span>':x.st==="bad"?'<span class="pill bad">Mismatch</span>':'<span class="pill warn">One side missing</span>';
+      var dv=(x.d==null)?Math.abs(x.a!=null?x.a:x.b):Math.abs(x.d);
+      return '<tr><td><b>'+esc(x.A.name)+'</b></td><td><b>'+esc(x.B.name)+'</b></td><td><span class="pill type">'+esc(x.cat)+'</span></td>'+
+        '<td class="r num">'+side(x.a)+'</td><td class="r num">'+side(x.b)+'</td>'+
+        '<td class="r num"'+(x.st!=="ok"?' style="color:var(--bad);font-weight:700"':'')+'>'+money(dv)+'</td><td>'+pil+'</td></tr>';}).join("")+
+    '</tbody></table></div><p class="stamp" style="margin-top:8px">Receivable shown positive; payable in (brackets). A matched pair nets to zero within that category.</p>';}
+  h+='</div>';
+  h+='<div class="card"><h2>Transactions — reconciled by nature · FY '+esc(curFy)+'</h2><p class="hint">Each side\'s transactions are matched to the reciprocal on the other side, e.g. A\'s "Sale of goods" to B against B\'s "Purchase of goods" from A.</p>';
+  if(!txRows.length)h+='<div class="empty" style="color:var(--ok)">All transaction totals agree across both sides.</div>';
+  else{h+='<div class="scroll"><table><thead><tr><th>Reported by</th><th>Nature</th><th class="r">Amount</th><th>Counterparty</th><th>Expected reciprocal</th><th class="r">Their amount</th><th class="r">Diff</th></tr></thead><tbody>'+
+    txRows.map(function(x){return '<tr><td><b>'+esc(x.A.name)+'</b></td><td><span class="pill type">'+esc(x.ta)+'</span></td><td class="r num">'+money(x.va)+'</td><td>'+esc(x.B.name)+'</td><td class="small">'+esc(x.tb)+'</td><td class="r num">'+money(x.vb)+'</td><td class="r num" style="color:var(--bad);font-weight:700">'+money(x.d)+'</td></tr>';}).join("")+'</tbody></table></div>';}
+  h+='</div>';
+  v.innerHTML=h;
+  document.getElementById("csvB").onclick=function(){var L=[["FY",curFy],[],["Entity A","Entity B","Category","A amount (recv+/pay-)","B amount","Difference","Status"]];
+    rows.forEach(function(x){L.push([x.A.name,x.B.name,x.cat,x.a==null?"":x.a,x.b==null?"":x.b,x.d==null?"":Math.abs(x.d),x.st==="ok"?"Matched":x.st==="bad"?"MISMATCH":"One side missing"]);});
+    dl(L,"balance_reconciliation_"+curFy.replace(/\W+/g,"")+".csv");};
+}
+
+function renderAS18(){
+  var v=document.getElementById("view");
+  if(!entities.length){v.innerHTML='<div class="card"><div class="empty">Add entities first.</div></div>';return;}
+  var rep;
+  if(isAdmin()){var f=renderAS18.sel&&entities.find(function(e){return e.id===renderAS18.sel;});rep=f?renderAS18.sel:entities[0].id;renderAS18.sel=rep;}
+  else{rep=myEntity();if(!rep){v.innerHTML='<div class="card"><div class="empty">No entity is assigned to your login.</div></div>';return;}}
+  var picker=isAdmin()?'<select id="repSel" style="min-width:220px">'+entities.map(function(e){return '<option value="'+e.id+'"'+(e.id===rep?" selected":"")+'>'+esc(e.name)+'</option>';}).join("")+'</select>'
+    :'<span class="pill type" style="padding:6px 12px">'+esc(nameOf(rep))+'</span>';
+  var h='<div class="card"><div class="toolbar"><h2 style="margin:0">AS 18 disclosure summary · FY '+esc(curFy)+'</h2><div class="row" style="align-items:center">'+picker+'<button class="btn ghost sm" id="csvA">Export CSV</button></div></div>'+
+    '<p class="hint">Transactions during the year and closing balances by category, in the books of <b>'+esc(nameOf(rep))+'</b> for FY '+esc(curFy)+', grouped by relationship — ready for the note.</p>';
+  var byRel={};
+  entities.filter(function(e){return e.id!==rep;}).forEach(function(cp){
+    var ta=txAgg(rep,cp.id),ba=balAgg(rep,cp.id);
+    if(!Object.keys(ta).length&&!Object.keys(ba).length)return;
+    (byRel[cp.rel]=byRel[cp.rel]||[]).push({cp:cp,ta:ta,ba:ba});});
+  var present=RELS.filter(function(r){return byRel[r];});
+  if(!present.length)h+='<div class="empty">No related-party transactions or balances recorded for this entity in FY '+esc(curFy)+'.</div>';
+  else{
+    h+='<div class="scroll"><table><thead><tr><th style="min-width:180px">Related party</th><th>Particulars</th><th class="r" style="min-width:130px">Amount (₹)</th></tr></thead><tbody>';
+    present.forEach(function(rel){
+      h+='<tr class="sechead"><td colspan="3">'+esc(rel)+'</td></tr>';
+      byRel[rel].forEach(function(o){
+        h+='<tr><td colspan="3" style="padding-top:10px"><b>'+esc(o.cp.name)+'</b></td></tr>';
+        var tks=Object.keys(o.ta);
+        if(tks.length){h+='<tr class="subhead"><td></td><td>Transactions during the year</td><td class="r"></td></tr>';
+          tks.forEach(function(ty){h+='<tr><td></td><td style="padding-left:18px">'+esc(ty)+'</td><td class="r num">'+money(o.ta[ty])+'</td></tr>';});}
+        var bks=Object.keys(o.ba).filter(function(c){return o.ba[c]!==0;});
+        if(bks.length){h+='<tr class="subhead"><td></td><td>Closing balances</td><td class="r"></td></tr>';
+          bks.forEach(function(c){var n=o.ba[c];h+='<tr><td></td><td style="padding-left:18px">'+esc(c)+' — '+(n<0?"payable":"receivable")+'</td><td class="r num">'+side(n)+'</td></tr>';});}
+      });
+    });
+    h+='</tbody></table></div><p class="stamp" style="margin-top:10px">Balances are disclosed by category and are not netted across categories.</p>';
+  }
+  h+='</div>';v.innerHTML=h;
+  var rs=document.getElementById("repSel");if(rs)rs.onchange=function(){renderAS18.sel=this.value;renderAS18();};
+  document.getElementById("csvA").onclick=function(){
+    var L=[["Reporting entity",nameOf(rep)],["FY",curFy],[],["Relationship","Related party","Section","Particulars","Amount"]];
+    present.forEach(function(rel){byRel[rel].forEach(function(o){
+      Object.keys(o.ta).forEach(function(ty){L.push([rel,o.cp.name,"Transaction",ty,o.ta[ty]]);});
+      Object.keys(o.ba).forEach(function(c){if(o.ba[c]!==0)L.push([rel,o.cp.name,"Closing balance",c+" — "+(o.ba[c]<0?"payable":"receivable"),Math.abs(o.ba[c])]);});});});
+    dl(L,"as18_"+nameOf(rep).replace(/\W+/g,"_")+"_"+curFy.replace(/\W+/g,"")+".csv");};
+}
+
+// ---------- COMPARE YEARS ----------
+function renderCompare(){
+  var v=document.getElementById("view");
+  if(config.years.length<2){v.innerHTML='<div class="card"><div class="empty">Add at least two financial years under Admin to compare.</div></div>';return;}
+  var rep;
+  if(isAdmin()){var f=renderCompare.rep&&entities.find(function(e){return e.id===renderCompare.rep;});rep=f?renderCompare.rep:(entities[0]&&entities[0].id);renderCompare.rep=rep;}
+  else{rep=myEntity();}
+  if(!rep){v.innerHTML='<div class="card"><div class="empty">No entity available to compare.</div></div>';return;}
+  var y1=renderCompare.y1&&config.years.indexOf(renderCompare.y1)>=0?renderCompare.y1:config.years[config.years.length-2];
+  var y2=renderCompare.y2&&config.years.indexOf(renderCompare.y2)>=0?renderCompare.y2:config.years[config.years.length-1];
+  renderCompare.y1=y1;renderCompare.y2=y2;
+  var picker=isAdmin()?'<select id="cRep" style="min-width:200px">'+entities.map(function(e){return '<option value="'+e.id+'"'+(e.id===rep?" selected":"")+'>'+esc(e.name)+'</option>';}).join("")+'</select>'
+    :'<span class="pill type" style="padding:6px 12px">'+esc(nameOf(rep))+'</span>';
+  var ySel=function(id,sel){return '<select id="'+id+'" style="min-width:120px">'+config.years.map(function(y){return '<option value="'+esc(y)+'"'+(y===sel?" selected":"")+'>'+esc(y)+'</option>';}).join("")+'</select>';};
+  v.innerHTML='<div class="card"><div class="toolbar"><h2 style="margin:0">Compare years</h2><div class="row" style="align-items:center">'+picker+
+    ySel("cY1",y1)+'<span class="muted">vs</span>'+ySel("cY2",y2)+'<button class="btn ghost sm" id="csvC">Export CSV</button></div></div>'+
+    '<p class="hint">Transactions and closing balances for <b>'+esc(nameOf(rep))+'</b>, side by side. Variance = later year less earlier year.</p>'+
+    '<div id="cmpOut"><div class="empty">Loading…</div></div></div>';
+  var cr=document.getElementById("cRep");if(cr)cr.onchange=function(){renderCompare.rep=this.value;renderCompare();};
+  document.getElementById("cY1").onchange=function(){renderCompare.y1=this.value;renderCompare();};
+  document.getElementById("cY2").onchange=function(){renderCompare.y2=this.value;renderCompare();};
+
+  (async function(){
+    var d1=await loadYear(y1),d2=await loadYear(y2);
+    var out=[],csv=[["Reporting entity",nameOf(rep)],["Comparing",y1,"vs",y2],[],["Related party","Section","Particulars",y1,y2,"Variance","% change"]];
+    var h='<div class="scroll"><table><thead><tr><th style="min-width:170px">Related party</th><th>Particulars</th><th class="r">FY '+esc(y1)+'</th><th class="r">FY '+esc(y2)+'</th><th class="r">Variance</th><th class="r">% change</th></tr></thead><tbody>';
+    var any=false;
+    entities.filter(function(e){return e.id!==rep;}).forEach(function(cp){
+      var t1=txAggIn(d1.T,rep,cp.id),t2=txAggIn(d2.T,rep,cp.id);
+      var b1=balAggIn(d1.B,rep,cp.id),b2=balAggIn(d2.B,rep,cp.id);
+      var tk={},bk={};
+      Object.keys(t1).forEach(function(k){tk[k]=1;});Object.keys(t2).forEach(function(k){tk[k]=1;});
+      Object.keys(b1).forEach(function(k){if(b1[k]!==0)bk[k]=1;});Object.keys(b2).forEach(function(k){if(b2[k]!==0)bk[k]=1;});
+      var tks=Object.keys(tk),bks=Object.keys(bk);
+      if(!tks.length&&!bks.length)return;
+      any=true;
+      h+='<tr class="sechead"><td colspan="6">'+esc(cp.name)+' <span class="muted" style="font-weight:600">· '+esc(cp.rel)+'</span></td></tr>';
+      if(tks.length){h+='<tr class="subhead"><td></td><td colspan="5">Transactions during the year</td></tr>';
+        tks.forEach(function(ty){var a=t1[ty]||0,b=t2[ty]||0;h+=cmpRow(ty,a,b);csv.push([cp.name,"Transaction",ty,a,b,b-a,pct(a,b)]);});}
+      if(bks.length){h+='<tr class="subhead"><td></td><td colspan="5">Closing balances</td></tr>';
+        bks.forEach(function(c){var a=b1[c]||0,b=b2[c]||0;h+=cmpRow(c,a,b,true);csv.push([cp.name,"Closing balance",c,a,b,b-a,pct(Math.abs(a),Math.abs(b))]);});}
+    });
+    h+='</tbody></table></div>';
+    document.getElementById("cmpOut").innerHTML=any?h+'<p class="stamp" style="margin-top:10px">Balances: receivable positive, payable in (brackets). A blank year means nothing was recorded for that party in that year.</p>':'<div class="empty">Nothing recorded for this entity in either year.</div>';
+    var cb=document.getElementById("csvC");if(cb)cb.onclick=function(){dl(csv,"compare_"+nameOf(rep).replace(/\W+/g,"_")+"_"+y1.replace(/\W+/g,"")+"_vs_"+y2.replace(/\W+/g,"")+".csv");};
+  })();
+}
+function pct(a,b){if(!a)return b?"new":"";var p=((b-a)/Math.abs(a))*100;return p.toFixed(1)+"%";}
+function cmpRow(label,a,b,isBal){
+  var d=b-a,cls=d>0?"up":d<0?"down":"muted";
+  var av=isBal?side(a||null):(a?money(a):'<span class="muted">—</span>');
+  var bv=isBal?side(b||null):(b?money(b):'<span class="muted">—</span>');
+  var pv=(!a&&b)?'<span class="pill new">new</span>':(a&&!b)?'<span class="pill warn">ceased</span>':(a?'<span class="'+cls+'">'+pct(Math.abs(a),Math.abs(b))+'</span>':'');
+  return '<tr><td></td><td style="padding-left:14px">'+esc(label)+'</td><td class="r num">'+av+'</td><td class="r num">'+bv+'</td>'+
+    '<td class="r num '+cls+'" style="font-weight:600">'+(d?(d>0?"+":"−")+money(Math.abs(d)).slice(1):"—")+'</td><td class="r">'+pv+'</td></tr>';
+}
+
+function dl(L,name){var csv=L.map(function(r){return (r||[]).map(function(c){var s=String(c==null?"":c);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",");}).join("\n");
+  var b=new Blob([csv],{type:"text/csv"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;a.click();}
+
+setInterval(async function(){if(HAS&&me&&(tab==="recon"||tab==="as18")){var d=await loadYear(curFy);txs=d.T;bals=d.B;renderView();}},25000);
+boot();
+})();
+</script>
